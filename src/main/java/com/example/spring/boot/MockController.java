@@ -3,29 +3,27 @@ package com.example.spring.boot;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class StubController {
+public class MockController {
     private String responseBody = "Hello!";
     private String lastRequestBody;
 
-    static final String ENDPOINT = "/endpoint";
-
-    @GetMapping(ENDPOINT)
+    @GetMapping
     public String getResponseForGet() {
         return responseBody;
     }
 
-    @PostMapping(ENDPOINT)
+    @PostMapping
     public String getResponseForPost(@RequestBody String requestBody) {
         this.lastRequestBody = requestBody;
         return responseBody;
     }
 
-    @PutMapping(ENDPOINT + "/responseBody")
+    @PutMapping("/responseBody")
     public void setResponse(@RequestBody String responseBody) {
         this.responseBody = responseBody;
     }
 
-    @GetMapping(ENDPOINT + "/lastRequestBody")
+    @GetMapping("/lastRequestBody")
     public String getLastRequestBody() {
         return lastRequestBody;
     }
