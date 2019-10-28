@@ -20,16 +20,54 @@ class MockControllerIntegrationTest {
 
     @Test
     public void unauthorizedUserShouldNotHaveAccessToEndpoint() {
-        ResponseEntity<String> response = template.getForEntity("/", String.class);
-
-        assertThat(response.getStatusCode(), equalTo(HttpStatus.UNAUTHORIZED));
+        assertThat(sendGetUnauthorizedRequest("/").getStatusCode(), equalTo(HttpStatus.UNAUTHORIZED));
     }
 
     @Test
     public void authorizedUserShouldHaveAccessToEndpoint() {
-        ResponseEntity<String> response = template.withBasicAuth("user", "password")
-                .getForEntity("/", String.class);
+        assertThat(sendGetAuthorizedRequestToEndpoint().getStatusCode(), equalTo(HttpStatus.OK));
+    }
 
-        assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
+    @Test
+    public void byDefaultMockShouldUseResponseFromFile() {
+        assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo("Default response from the file"));
+    }
+
+    @Test
+    public void mockShouldReturnLastRequestBody() {
+        sendPostAuthorizedRequestToEndpoint("Request message");
+
+        assertThat(sendGetUnauthorizedRequest("/lastRequestBody").getBody(), equalTo("Request message"));
+    }
+
+    @Test
+    public void userCanSetTheirOwnResponse() {
+        String defaultResponse = sendGetAuthorizedRequestToEndpoint().getBody();
+        try {
+            sendPutAuthorizedRequest("/responseBody", "New response message");
+
+            assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo("New response message"));
+        } finally {
+            sendPutAuthorizedRequest("/responseBody", defaultResponse);
+        }
+    }
+
+    private void sendPostAuthorizedRequestToEndpoint(String requestBody) {
+        template.withBasicAuth("user", "password")
+                .postForEntity("/", requestBody, String.class);
+    }
+
+    private void sendPutAuthorizedRequest(String url, String requestBody) {
+        template.withBasicAuth("user", "password")
+                .put(url, requestBody);
+    }
+
+    private ResponseEntity<String> sendGetAuthorizedRequestToEndpoint() {
+        return template.withBasicAuth("user", "password")
+                .getForEntity("/", String.class);
+    }
+
+    private ResponseEntity<String> sendGetUnauthorizedRequest(String url) {
+        return template.getForEntity(url, String.class);
     }
 }
