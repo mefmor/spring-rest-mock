@@ -1,5 +1,6 @@
 package com.example.spring.boot;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
@@ -17,8 +18,8 @@ public class MockController {
     private String responseBody;
     private String lastRequestBody;
 
-    public MockController() {
-        Resource r = new DefaultResourceLoader().getResource("DefaultResponse.txt");
+    public MockController(@Value("${default.response.path}") String pathToDefaultResponseFile) {
+        Resource r = new DefaultResourceLoader().getResource(pathToDefaultResponseFile);
         responseBody = asString(r);
     }
 
