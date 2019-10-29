@@ -4,6 +4,7 @@ package com.example.spring.boot;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,10 @@ import static org.hamcrest.Matchers.equalTo;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MockControllerIntegrationTest {
     @Autowired
-    private TestRestTemplate template;
+    private TestRestTemplate endpoint;
+
+    @Value("${default.response.path}")
+    private String pathToDefaultResponseFile;
 
     @Test
     public void unauthorizedUserShouldNotHaveAccessToEndpoint() {
@@ -31,7 +35,7 @@ public class MockControllerIntegrationTest {
 
     @Test
     public void byDefaultMockShouldUseResponseFromFile() {
-        assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo("Default response from the file"));
+        assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo(Utils.readString(pathToDefaultResponseFile)));
     }
 
     @Test
@@ -54,21 +58,21 @@ public class MockControllerIntegrationTest {
     }
 
     private void sendPostAuthorizedRequestToEndpoint(String requestBody) {
-        template.withBasicAuth("user", "password")
+        endpoint.withBasicAuth("user", "password")
                 .postForEntity("/", requestBody, String.class);
     }
 
     private void sendPutAuthorizedRequest(String url, String requestBody) {
-        template.withBasicAuth("user", "password")
+        endpoint.withBasicAuth("user", "password")
                 .put(url, requestBody);
     }
 
     private ResponseEntity<String> sendGetAuthorizedRequestToEndpoint() {
-        return template.withBasicAuth("user", "password")
+        return endpoint.withBasicAuth("user", "password")
                 .getForEntity("/", String.class);
     }
 
     private ResponseEntity<String> sendGetUnauthorizedRequest(String url) {
-        return template.getForEntity(url, String.class);
+        return endpoint.getForEntity(url, String.class);
     }
 }
