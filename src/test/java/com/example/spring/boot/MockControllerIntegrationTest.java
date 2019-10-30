@@ -49,12 +49,42 @@ public class MockControllerIntegrationTest {
     public void userCanSetTheirOwnResponse() {
         String defaultResponse = sendGetAuthorizedRequestToEndpoint().getBody();
         try {
-            sendPutAuthorizedRequest("/responseBody", "New response message");
-
+            assertThat(sendPostUnauthorizedRequestToEndpoint("/responseBody", "New response message").getStatusCode(),
+                    equalTo(HttpStatus.OK));
             assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo("New response message"));
         } finally {
-            sendPutAuthorizedRequest("/responseBody", defaultResponse);
+            sendPostUnauthorizedRequestToEndpoint("/responseBody", defaultResponse);
         }
+    }
+
+    @Test
+    public void userCanSetTheirOwnResponseCode() {
+        Integer defaultResponseCode = sendGetAuthorizedRequestToEndpoint().getStatusCodeValue();
+        try {
+            assertThat(sendPostUnauthorizedRequestToEndpoint("/responseCode", "410").getStatusCode(),
+                    equalTo(HttpStatus.OK));
+            assertThat(sendGetAuthorizedRequestToEndpoint().getStatusCode(), equalTo(HttpStatus.GONE));
+        } finally {
+            sendPostUnauthorizedRequestToEndpoint("/responseCode", defaultResponseCode);
+        }
+    }
+
+    @Test
+    public void inCaseOfNotExistingResponseCodeUserGetMessageAndResponseRemainUnchanged() {
+        ResponseEntity<String> response = sendPostUnauthorizedRequestToEndpoint("/responseCode", "666");
+
+        assertThat(response.getStatusCode(), equalTo(HttpStatus.BAD_REQUEST));
+        assertThat(response.getBody(), equalTo("[666] is wrong HTTP status code"));
+        assertThat(sendGetAuthorizedRequestToEndpoint().getStatusCode(), equalTo(HttpStatus.OK));
+    }
+
+    @Test
+    public void inCaseOfIncorrectResponseCodeUserGetMessageAndResponseRemainUnchanged() {
+        ResponseEntity<String> response = sendPostUnauthorizedRequestToEndpoint("/responseCode", "OMG!");
+
+        assertThat(response.getStatusCode(), equalTo(HttpStatus.BAD_REQUEST));
+        assertThat(response.getBody(), equalTo("[OMG!] is wrong HTTP status code"));
+        assertThat(sendGetAuthorizedRequestToEndpoint().getStatusCode(), equalTo(HttpStatus.OK));
     }
 
     private void sendPostAuthorizedRequestToEndpoint(String requestBody) {
@@ -62,9 +92,9 @@ public class MockControllerIntegrationTest {
                 .postForEntity("/", requestBody, String.class);
     }
 
-    private void sendPutAuthorizedRequest(String url, String requestBody) {
-        endpoint.withBasicAuth("user", "password")
-                .put(url, requestBody);
+    private ResponseEntity<String> sendPostUnauthorizedRequestToEndpoint(String url, Object requestBody) {
+        return endpoint.withBasicAuth("user", "password")
+                .postForEntity(url, requestBody, String.class);
     }
 
     private ResponseEntity<String> sendGetAuthorizedRequestToEndpoint() {
