@@ -7,9 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -40,7 +43,8 @@ public class MockControllerIntegrationTest {
 
     @Test
     public void mockShouldReturnLastRequestBody() {
-        sendPostAuthorizedRequestToEndpoint("Request message");
+        endpoint.withBasicAuth("user", "password")
+                .postForEntity("/", "Request message", String.class);
 
         assertThat(sendGetUnauthorizedRequest("/lastRequestBody").getBody(), equalTo("Request message"));
     }
@@ -87,9 +91,16 @@ public class MockControllerIntegrationTest {
         assertThat(sendGetAuthorizedRequestToEndpoint().getStatusCode(), equalTo(HttpStatus.OK));
     }
 
-    private void sendPostAuthorizedRequestToEndpoint(String requestBody) {
-        endpoint.withBasicAuth("user", "password")
-                .postForEntity("/", requestBody, String.class);
+    @Test
+    public void userCanSetTheirOwnHeader() {
+        sendPostUnauthorizedRequestToEndpoint("/responseHeaders/Accept", "text/xml, application/soap+xml");
+        sendPostUnauthorizedRequestToEndpoint("/responseHeaders/content-type", "text/xml; charset=\"UTF-8\"");
+        sendPostUnauthorizedRequestToEndpoint("/responseHeaders/Server", "IOS Servlet Container");
+        HttpHeaders responseHeaders = sendGetAuthorizedRequestToEndpoint().getHeaders();
+
+        assertThat(responseHeaders.getAccept().toString(), equalTo("[text/xml, application/soap+xml]"));
+        assertThat(Objects.requireNonNull(responseHeaders.getContentType()).toString(), equalTo("text/xml;charset=UTF-8"));
+        assertThat(Objects.requireNonNull(responseHeaders.get("Server")).toString(), equalTo("[IOS Servlet Container]"));
     }
 
     private ResponseEntity<String> sendPostUnauthorizedRequestToEndpoint(String url, Object requestBody) {

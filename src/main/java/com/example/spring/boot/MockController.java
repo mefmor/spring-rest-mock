@@ -14,6 +14,7 @@ public class MockController {
 
     private String responseBody;
     private HttpStatus httpStatus;
+    private HttpHeaders responseHeaders = new HttpHeaders();
     private String lastRequestBody;
 
     public MockController(@Value("${default.response.path}") String pathToDefaultResponseFile,
@@ -26,7 +27,7 @@ public class MockController {
     public ResponseEntity<String> getResponseForGet(@RequestHeader HttpHeaders headers) {
         logger.info("GET request received from {} host", headers.getHost());
 
-        return ResponseEntity.status(httpStatus).body(responseBody);
+        return ResponseEntity.status(httpStatus).headers(responseHeaders).body(responseBody);
     }
 
     @PostMapping
@@ -35,7 +36,7 @@ public class MockController {
         logger.info("POST request received from {}", headers.getHost());
         logger.debug(requestBody);
 
-        return ResponseEntity.status(httpStatus).body(responseBody);
+        return ResponseEntity.status(httpStatus).headers(responseHeaders).body(responseBody);
     }
 
     @PostMapping("/responseBody")
@@ -61,6 +62,12 @@ public class MockController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(String.format("[%s] is wrong HTTP status code", httpResponseCode));
         }
+    }
+
+    @PostMapping("/responseHeaders/{header}")
+    public void setResponseHeader(@PathVariable("header") String header, @RequestBody String value) {
+        responseHeaders.set(header, value);
+        logger.debug("New HTTP header with name [{}] and value [{}] added", header, value);
     }
 
     @GetMapping("/lastRequestBody")
