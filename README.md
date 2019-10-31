@@ -23,3 +23,11 @@ In order to set a new response header, please use the POST request to /responseH
 
 If you want to get the body of the last request to the endpoint, please use the GET request to /lastRequestBody
 (e.g. http://localhost:8080/endpoint/lastRequestBody).
+
+### HTTPS
+PKCS12 keystore stored in src/main/resources/
+
+To generate your own PKCS12 keystore you can use command:
+```
+keytool -genkeypair -alias beldung -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore rest-mock.p12 -validity 3650
+```
