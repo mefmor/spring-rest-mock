@@ -3,10 +3,14 @@ package com.example.spring.boot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
 
 @RestController
 public class MockController {
@@ -17,9 +21,9 @@ public class MockController {
     private HttpHeaders responseHeaders = new HttpHeaders();
     private String lastRequestBody;
 
-    public MockController(@Value("${default.response.path}") String pathToDefaultResponseFile,
-                          @Value("${default.response.status.code}") int httpResponseCode) {
-        responseBody = Utils.readString(pathToDefaultResponseFile);
+    public MockController(@Value("classpath:${default.response.path}") Resource defaultResponse,
+                          @Value("${default.response.status.code}") int httpResponseCode) throws IOException {
+        responseBody = IOUtils.toString(defaultResponse.getInputStream(), "UTF-8");
         httpStatus = HttpStatus.resolve(httpResponseCode);
     }
 

@@ -1,18 +1,21 @@
 package com.example.spring.boot;
 
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.IOException;
 import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,8 +28,8 @@ public class MockControllerIntegrationTest {
     @Autowired
     private TestRestTemplate endpoint;
 
-    @Value("${default.response.path}")
-    private String pathToDefaultResponseFile;
+    @Value("classpath:${default.response.path}")
+    private Resource defaultResponse;
 
     @Test
     public void unauthorizedUserShouldNotHaveAccessToEndpoint() {
@@ -39,8 +42,10 @@ public class MockControllerIntegrationTest {
     }
 
     @Test
-    public void byDefaultMockShouldUseResponseFromFile() {
-        assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo(Utils.readString(pathToDefaultResponseFile)));
+    public void byDefaultMockShouldUseResponseFromFile() throws IOException {
+        String defaultResponse = IOUtils.toString(this.defaultResponse.getInputStream(), "UTF-8");
+
+        assertThat(sendGetAuthorizedRequestToEndpoint().getBody(), equalTo(defaultResponse));
     }
 
     @Test
